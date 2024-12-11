@@ -71,7 +71,7 @@
 
 [pages.login]
 "hello" = "Hello"
-"title" = "Welcome To MR BZ Panel"
+"title" = "Welcome To @delta_vpn12"
 "loginAgain" = "Your session has expired, please log in again"
 
 [pages.login.toasts]
