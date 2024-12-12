@@ -165,74 +165,28 @@ config_after_install() {
 install_x-ui() {
     cd /usr/local/
 
+    # Download and install x-ui from a specific URL if version argument is not provided
     if [ $# == 0 ]; then
-        last_version=$(curl -Ls "https://api.github.com/repos/mr-bz/3x-ui/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-        if [[ ! -n "$last_version" ]]; then
-            echo -e "${red}Failed to fetch x-ui version, it maybe due to Github API restrictions, please try it later${plain}"
-            exit 1
-        fi
-        echo -e "Got x-ui latest version: ${last_version}, beginning the installation..."
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch).tar.gz https://github.com/deltacoms/3x-ui/releases/download/2.3.5.zip/sss-2.3.5.zip
-        if [[ $? -ne 0 ]]; then
-            echo -e "${red}Downloading x-ui failed, please be sure that your server can access Github ${plain}"
-            exit 1
-        fi
-    else
-        last_version=$1
         url="https://github.com/deltacoms/3x-ui/releases/download/2.3.5.zip/sss-2.3.5.zip"
-        echo -e "Beginning to install x-ui $1"
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch).tar.gz ${url}
-        if [[ $? -ne 0 ]]; then
-            echo -e "${red}Download x-ui $1 failed,please check the version exists ${plain}"
-            exit 1
-        fi
+    else
+        url="https://github.com/deltacoms/3x-ui/releases/download/$1.zip/sss-$1.zip"
     fi
 
-    if [[ -e /usr/local/x-ui/ ]]; then
-        systemctl stop x-ui
-        rm /usr/local/x-ui/ -rf
-    fi
+    echo -e "${yellow}Downloading x-ui...${plain}"
+    wget --no-check-certificate -O /tmp/sss.zip ${url} && echo -e "${green}Download completed.${plain}" || { echo -e "${red}Download failed.${plain}"; exit 1; }
 
-    tar zxvf x-ui-linux-$(arch).tar.gz
-    rm x-ui-linux-$(arch).tar.gz -f
-    cd x-ui
-    chmod +x x-ui
+    echo -e "${yellow}Extracting x-ui...${plain}"
+    mkdir -p /usr/local/x-ui
+    tar -zxvf /tmp/sss.zip -C /usr/local/x-ui/ || { echo -e "${red}Extraction failed.${plain}"; exit 1; }
 
-    # Check the system's architecture and rename the file accordingly
-    if [[ $(arch) == "armv5" || $(arch) == "armv6" || $(arch) == "armv7" ]]; then
-        mv bin/xray-linux-$(arch) bin/xray-linux-arm
-        chmod +x bin/xray-linux-arm
-    fi
+    echo -e "${yellow}Setting up x-ui permissions...${plain}"
+    chmod +x /usr/local/x-ui/x-ui
 
-    chmod +x x-ui bin/xray-linux-$(arch)
-    cp -f x-ui.service /etc/systemd/system/
-    wget --no-check-certificate -O /usr/bin/x-ui https://raw.githubusercontent.com/mr-bz/3x-ui/main/x-ui.sh
-    chmod +x /usr/local/x-ui/x-ui.sh
-    chmod +x /usr/bin/x-ui
+    echo -e "${yellow}Configuration after installation...${plain}"
     config_after_install
-
-    systemctl daemon-reload
-    systemctl enable x-ui
-    systemctl start x-ui
-    echo -e "${green}x-ui ${last_version}${plain} installation finished, it is running now..."
-    echo -e ""
-    echo -e "x-ui control menu usages: "
-    echo -e "----------------------------------------------"
-    echo -e "x-ui              - Enter     Admin menu"
-    echo -e "x-ui start        - Start     x-ui"
-    echo -e "x-ui stop         - Stop      x-ui"
-    echo -e "x-ui restart      - Restart   x-ui"
-    echo -e "x-ui status       - Show      x-ui status"
-    echo -e "x-ui enable       - Enable    x-ui on system startup"
-    echo -e "x-ui disable      - Disable   x-ui on system startup"
-    echo -e "x-ui log          - Check     x-ui logs"
-    echo -e "x-ui banlog       - Check Fail2ban ban logs"
-    echo -e "x-ui update       - Update    x-ui"
-    echo -e "x-ui install      - Install   x-ui"
-    echo -e "x-ui uninstall    - Uninstall x-ui"
-    echo -e "----------------------------------------------"
 }
 
-echo -e "${green}Running...${plain}"
 install_base
-install_x-ui $1
+install_x-ui
+
+echo -e "${green}x-ui installation completed!${plain}"
