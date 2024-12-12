@@ -7,8 +7,8 @@ plain='\033[0m'
 
 cur_dir=$(pwd)
 
-# check root
-[[ $EUID -ne 0 ]] && echo -e "${red}Fatal error: ${plain} Please run this script with root privilege \n " && exit 1
+# Check for root privileges
+[[ $EUID -ne 0 ]] && echo -e "${red}Fatal error: ${plain} Please run this script with root privileges \n " && exit 1
 
 # Check OS and set release variable
 if [[ -f /etc/os-release ]]; then
@@ -120,7 +120,19 @@ install_base() {
     esac
 }
 
-# This function will be called when user installed x-ui out of security
+install_x-ui() {
+    cd /usr/local/
+    version="latest"
+
+    echo -e "${yellow}Downloading x-ui...${plain}"
+    wget --no-check-certificate -O /tmp/sss.zip https://github.com/deltacoms/3x-ui/releases/download/${version}/sss-${version}.zip
+
+    unzip /tmp/sss.zip -d /usr/local/x-ui/
+    cd /usr/local/x-ui/
+    chmod +x x-ui
+    config_after_install
+}
+
 config_after_install() {
     echo -e "${yellow}Install/update finished! For security it's recommended to modify panel settings ${plain}"
     read -p "Do you want to continue with the modification [y/n]?": config_confirm
@@ -159,28 +171,6 @@ config_after_install() {
         fi
     fi
     /usr/local/x-ui/x-ui migrate
-}
-
-install_x-ui() {
-    cd /usr/local/
-
-    if [ $# == 0 ]; then
-        last_version=$(curl -Ls "https://api.github.com/repos/mr-bz/3x-ui/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-        if [[ ! -n "$last_version" ]]; then
-            echo -e "${red}Failed to fetch x-ui version, it maybe due to Github API restrictions, please try manually downloading it from Github.${plain}"
-            exit 1
-        fi
-        echo -e "${yellow}Downloading x-ui $last_version...${plain}"
-        wget --no-check-certificate -O /tmp/sss.zip https://github.com/deltacoms/3x-ui/releases/download/${last_version}/sss-${last_version}.zip
-    else
-        echo -e "${yellow}Downloading x-ui $1...${plain}"
-        wget --no-check-certificate -O /tmp/sss.zip https://github.com/deltacoms/3x-ui/releases/download/$1/sss-$1.zip
-    fi
-
-    unzip /tmp/sss.zip -d /usr/local/x-ui/
-    cd /usr/local/x-ui/
-    chmod +x x-ui
-    config_after_install
 }
 
 install_base
