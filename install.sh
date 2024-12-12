@@ -122,7 +122,7 @@ install_base() {
 
 install_x-ui() {
     cd /usr/local/
-    version="latest"
+    version="2.3.5"
 
     echo -e "${yellow}Downloading x-ui...${plain}"
     wget --no-check-certificate -O /tmp/sss.zip https://github.com/deltacoms/3x-ui/releases/download/${version}/sss-${version}.zip
