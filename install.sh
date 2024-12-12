@@ -95,7 +95,6 @@ else
     echo "- Oracle Linux 8+"
     echo "- OpenSUSE Tumbleweed"
     exit 1
-
 fi
 
 install_base() {
@@ -165,28 +164,24 @@ config_after_install() {
 install_x-ui() {
     cd /usr/local/
 
-    # Download and install x-ui from a specific URL if version argument is not provided
     if [ $# == 0 ]; then
-        url="https://github.com/deltacoms/3x-ui/releases/download/2.3.5.zip/sss-2.3.5.zip"
+        last_version=$(curl -Ls "https://api.github.com/repos/mr-bz/3x-ui/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        if [[ ! -n "$last_version" ]]; then
+            echo -e "${red}Failed to fetch x-ui version, it maybe due to Github API restrictions, please try manually downloading it from Github.${plain}"
+            exit 1
+        fi
+        echo -e "${yellow}Downloading x-ui $last_version...${plain}"
+        wget --no-check-certificate -O /tmp/sss.zip https://github.com/deltacoms/3x-ui/releases/download/${last_version}/sss-${last_version}.zip
     else
-        url="https://github.com/deltacoms/3x-ui/releases/download/$1.zip/sss-$1.zip"
+        echo -e "${yellow}Downloading x-ui $1...${plain}"
+        wget --no-check-certificate -O /tmp/sss.zip https://github.com/deltacoms/3x-ui/releases/download/$1/sss-$1.zip
     fi
 
-    echo -e "${yellow}Downloading x-ui...${plain}"
-    wget --no-check-certificate -O /tmp/sss.zip ${url} && echo -e "${green}Download completed.${plain}" || { echo -e "${red}Download failed.${plain}"; exit 1; }
-
-    echo -e "${yellow}Extracting x-ui...${plain}"
-    mkdir -p /usr/local/x-ui
-    tar -zxvf /tmp/sss.zip -C /usr/local/x-ui/ || { echo -e "${red}Extraction failed.${plain}"; exit 1; }
-
-    echo -e "${yellow}Setting up x-ui permissions...${plain}"
-    chmod +x /usr/local/x-ui/x-ui
-
-    echo -e "${yellow}Configuration after installation...${plain}"
+    unzip /tmp/sss.zip -d /usr/local/x-ui/
+    cd /usr/local/x-ui/
+    chmod +x x-ui
     config_after_install
 }
 
 install_base
 install_x-ui
-
-echo -e "${green}x-ui installation completed!${plain}"
